@@ -1,0 +1,95 @@
+{
+  "changeName": "file-viewer-implementation",
+  "changeDir": "C:\\Prj\\Jheitrujillo\\AIVI\\AIVI_Filesearch\\openspec\\changes\\file-viewer-implementation",
+  "schemaName": "spec-driven",
+  "contextFiles": {
+    "proposal": "C:\\Prj\\Jheitrujillo\\AIVI\\AIVI_Filesearch\\openspec\\changes\\file-viewer-implementation\\proposal.md",
+    "specs": "C:\\Prj\\Jheitrujillo\\AIVI\\AIVI_Filesearch\\openspec\\changes\\file-viewer-implementation\\specs\\**\\*.md",
+    "design": "C:\\Prj\\Jheitrujillo\\AIVI\\AIVI_Filesearch\\openspec\\changes\\file-viewer-implementation\\design.md",
+    "tasks": "C:\\Prj\\Jheitrujillo\\AIVI\\AIVI_Filesearch\\openspec\\changes\\file-viewer-implementation\\tasks.md"
+  },
+  "progress": {
+    "total": 15,
+    "complete": 0,
+    "remaining": 15
+  },
+  "tasks": [
+    {
+      "id": "1",
+      "description": "1.1 Modificar la ruta `/api/stores/:storeId/upload` en `server/routes/documents.js` para persistir archivos en `server/uploads/:storeId/`.",
+      "done": false
+    },
+    {
+      "id": "2",
+      "description": "1.2 Asegurar que el nombre de archivo guardado sea rastreable y manejar correctamente el buffer de multer.",
+      "done": false
+    },
+    {
+      "id": "3",
+      "description": "1.3 Actualizar la ruta `DELETE /api/stores/:storeId/documents/:docId` para eliminar también la copia local asociada.",
+      "done": false
+    },
+    {
+      "id": "4",
+      "description": "2.1 Crear el archivo de ruta `server/routes/files.js` para servir archivos estáticos con cabeceras MIME correctas.",
+      "done": false
+    },
+    {
+      "id": "5",
+      "description": "2.2 Registrar la ruta `/api/files` en `server/index.js`.",
+      "done": false
+    },
+    {
+      "id": "6",
+      "description": "2.3 Modificar el endpoint de listado de documentos para indicar si existe una previsualización local disponible.",
+      "done": false
+    },
+    {
+      "id": "7",
+      "description": "3.1 Instalar dependencias necesarias como `react-markdown` y `lucide-react` para iconos.",
+      "done": false
+    },
+    {
+      "id": "8",
+      "description": "3.2 Crear `src/components/FileViewer.jsx` con lógica de despacho (switch) basada en el `mimeType`.",
+      "done": false
+    },
+    {
+      "id": "9",
+      "description": "3.3 Implementar visualizadores específicos: `ImageViewer`, `VideoPlayer`, `AudioPlayer`, `MarkdownViewer` y `GenericDownloader`.",
+      "done": false
+    },
+    {
+      "id": "10",
+      "description": "4.1 Añadir la función `getFilePreviewUrl` en `src/services/api.js`.",
+      "done": false
+    },
+    {
+      "id": "11",
+      "description": "4.2 Integrar la acción de \"Ver\" en `src/components/TreeView.jsx` junto a las opciones de eliminar.",
+      "done": false
+    },
+    {
+      "id": "12",
+      "description": "4.3 Implementar un estado de Modal en `src/App.jsx` para gestionar el visor de archivos abierto.",
+      "done": false
+    },
+    {
+      "id": "13",
+      "description": "5.1 Verificar la subida y visualización de una imagen, un video y un archivo markdown.",
+      "done": false
+    },
+    {
+      "id": "14",
+      "description": "5.2 Probar el comportamiento con archivos PDF (iframe) y documentos no soportados (download fallback).",
+      "done": false
+    },
+    {
+      "id": "15",
+      "description": "5.3 Ajustar estilos para que el visualizador se integre con la estética premium del proyecto.",
+      "done": false
+    }
+  ],
+  "state": "ready",
+  "instruction": "Read context files, work through pending tasks, mark complete as you go.\nPause if you hit blockers or need clarification."
+}

@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run nodemon",
+            "presentation": {
+                "hidden": true
+            },
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev:nodemon"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Launch Vite App",
+            "presentation": {
+                "hidden": true
+            },
+            "url": "http://localhost:8081",
+            "webRoot": "${workspaceFolder}",
+            "sourceMaps": true,
+            "trace": "verbose"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Full Vite debug",
+            "configurations": [
+                "Run nodemon",
+                "Launch Vite App"
+            ]
+        }
+    ]
+}
