@@ -7,13 +7,13 @@ El sistema SHALL exponer un servidor Express que actúe como proxy entre el fron
 - **WHEN** se ejecuta `npm run dev` o `node server/index.js`
 - **THEN** el servidor Express MUST iniciar en un puerto configurable (default 3001) y servir los endpoints definidos
 
-#### Scenario: API key desde .env
-- **WHEN** el servidor inicia
-- **THEN** MUST leer `GOOGLE_API_KEY` desde el archivo `.env` usando dotenv y usarla en todas las llamadas a Google API
+#### Scenario: API key dinámica obligatoria
+- **WHEN** el servidor recibe un request
+- **THEN** MUST usar la API Key proporcionada en el header `X-Goog-Api-Key` en todas las llamadas a Google API. Si el header falta, MUST retornar error 401.
 
-#### Scenario: API key no configurada
-- **WHEN** `GOOGLE_API_KEY` no está definida en `.env`
-- **THEN** el servidor MUST loguear un error claro indicando que la API key es requerida y terminar el proceso
+#### Scenario: No usar .env
+- **WHEN** el servidor inicia o procesa un request
+- **THEN** MUST ignorar cualquier variable `GOOGLE_API_KEY` en el `.env`, delegando la autenticación totalmente al cliente
 
 ---
 

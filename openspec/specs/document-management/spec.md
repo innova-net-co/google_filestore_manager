@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Listar documentos de un store
-El sistema SHALL cargar y mostrar todos los documentos de un store seleccionado, usando el endpoint `fileSearchStores.documents.list` con paginación automática. Para los documentos que tengan una copia local, el sistema MUST incluir información que permita generar una URL de previsualización.
+El sistema SHALL cargar y mostrar todos los documentos de un store seleccionado, usando el endpoint `fileSearchStores.documents.list` con paginación automática. Los documentos ya no incluirán metadatos de previsualización local (`hasLocalPreview`, `previewUrl`).
 
 #### Scenario: Seleccionar un store
 - **WHEN** el usuario hace clic sobre un store en el árbol
-- **THEN** el sistema MUST hacer un GET a `/api/stores/:id/documents`, mostrar los documentos como nodos hijos, y habilitar el botón de "Ver" para aquellos con disponibilidad local
+- **THEN** el sistema MUST hacer un GET a `/api/stores/:id/documents` y mostrar los documentos como nodos hijos dentro del store, omitiendo cualquier lógica de previsualización de archivos local
 
 #### Scenario: Store vacío
 - **WHEN** un store no tiene documentos
@@ -13,7 +13,7 @@ El sistema SHALL cargar y mostrar todos los documentos de un store seleccionado,
 
 #### Scenario: Información del documento
 - **WHEN** se muestran los documentos
-- **THEN** cada documento MUST mostrar su `displayName`, `mimeType`, `sizeBytes` formateado, y un badge de estado (ACTIVE=verde, PENDING=amarillo, FAILED=rojo)
+- **THEN** cada documento MUST mostrar su `displayName`, `mimeType`, `sizeBytes` formateado, y un badge de estado (ACTIVE=verde, PENDING=amarillo, FAILED=rojo) sin ofrecer ninguna acción de "Ver" o "Abrir"
 
 ---
 
@@ -35,15 +35,15 @@ El sistema SHALL permitir eliminar un documento individual de un store usando el
 ---
 
 ### Requirement: Subir archivo a un store
-El sistema SHALL permitir subir archivos a un store seleccionado usando el endpoint `media.uploadToFileSearchStore` mediante upload multipart. Simultáneamente, el sistema MUST guardar una copia del archivo en el servidor local para propósitos de previsualización.
+El sistema SHALL permitir subir archivos a un store seleccionado usando el endpoint `media.uploadToFileSearchStore` mediante upload multipart.
 
 #### Scenario: Seleccionar archivo para subir
 - **WHEN** el usuario hace clic en "Subir Archivo" en un store
 - **THEN** el sistema MUST abrir un diálogo de selección de archivos del sistema operativo
 
-#### Scenario: Upload exitoso y persistencia local
+#### Scenario: Upload exitoso
 - **WHEN** el usuario selecciona un archivo y se completa la subida
-- **THEN** el sistema MUST enviar un POST multipart a `/api/stores/:id/upload`, guardar el archivo en `server/uploads/:storeId/`, y agregar el nuevo documento al árbol con la opción de previsualización habilitada (posiblemente en estado PENDING)
+- **THEN** el sistema MUST enviar un POST multipart a `/api/stores/:id/upload` y agregar el nuevo documento al árbol (posiblemente en estado PENDING)
 
 #### Scenario: Upload fallido
 - **WHEN** la subida falla por error de red o API
