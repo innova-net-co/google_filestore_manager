@@ -42,7 +42,6 @@ function StoreNode({
   selectedDocId,
   onSelectStore,
   onSelectDoc,
-  onViewDoc,
   onToggleExpand,
 }) {
   const { success } = useToast();
@@ -110,18 +109,6 @@ function StoreNode({
                   <span className="tree-node__label" title={doc.displayName || docId}>
                     {doc.displayName || docId}
                   </span>
-                  {doc.hasLocalPreview && (
-                    <button 
-                      className="copy-btn" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewDoc(storeId, docId);
-                      }}
-                      title="Ver contenido"
-                    >
-                      👁️
-                    </button>
-                  )}
                   <StateBadge state={doc.state} />
                 </div>
               );
@@ -148,7 +135,6 @@ export default function TreeView({
   docsLoading,
   onSelectStore,
   onSelectDoc,
-  onViewDoc,
 }) {
   const [expandedStores, setExpandedStores] = useState(new Set());
 
@@ -204,7 +190,6 @@ export default function TreeView({
             selectedDocId={selectedDocId}
             onSelectStore={onSelectStore}
             onSelectDoc={onSelectDoc}
-            onViewDoc={onViewDoc}
             onToggleExpand={handleToggleExpand}
           />
         );

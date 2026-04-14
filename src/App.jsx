@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStores } from './hooks/useStores';
 import { useDocuments } from './hooks/useDocuments';
+import { useApiKeys } from './hooks/useApiKeys';
 import { ToastProvider, useToast } from './components/Toast';
 import Toolbar from './components/Toolbar';
 import TreeView from './components/TreeView';
 import StorePanel from './components/StorePanel';
-import FileViewer from './components/FileViewer';
 import { ConfirmModal, InputModal } from './components/Modal';
+import ApiKeyManager from './components/ApiKeyManager';
+import ApiKeyModal from './components/ApiKeyModal';
 
 function AppContent() {
   const { stores, loading: storesLoading, fetchStores, addStore, removeStore } = useStores();
   const { documents, loading: docsLoading, uploading, fetchDocuments, removeDocument, upload, clearDocuments } = useDocuments();
+  const { keys, addKey, hasKeys, getActiveKey } = useApiKeys();
   const { success, error, info } = useToast();
 
+  const activeKey = getActiveKey();
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [selectedDocId, setSelectedDocId] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
@@ -21,12 +25,17 @@ function AppContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteStoreModal, setShowDeleteStoreModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState(null);
-  const [previewDoc, setPreviewDoc] = useState(null);
 
-  // Initial load
+  // Initial load when keys are present or change
   useEffect(() => {
-    fetchStores();
-  }, [fetchStores]);
+    if (hasKeys) {
+      fetchStores();
+    } else {
+      // Si no hay keys, limpiar datos
+      clearDocuments();
+      setSelectedStoreId(null);
+    }
+  }, [hasKeys, activeKey?.id, fetchStores, clearDocuments]);
 
   // Sync selected store object
   useEffect(() => {
@@ -104,12 +113,6 @@ function AppContent() {
     }
   };
 
-  const handleViewDoc = (storeId, docId) => {
-    const doc = documents.find(d => d.name?.split('/').pop() === docId);
-    if (!doc) return;
-    setPreviewDoc({ ...doc, storeId });
-  };
-
   return (
     <div className="app">
       <aside className="sidebar">
@@ -117,6 +120,7 @@ function AppContent() {
           <span className="sidebar__logo">🔍</span>
           <h1 className="sidebar__title">File Search Stores</h1>
         </div>
+        <ApiKeyManager />
         <div className="sidebar__content">
           <TreeView
             stores={stores}
@@ -127,7 +131,6 @@ function AppContent() {
             docsLoading={docsLoading}
             onSelectStore={handleSelectStore}
             onSelectDoc={handleSelectDoc}
-            onViewDoc={handleViewDoc}
           />
         </div>
       </aside>
@@ -165,7 +168,6 @@ function AppContent() {
             onDeleteDocument={(storeId, docId, displayName) => {
               setDocToDelete({ storeId, docId, displayName });
             }}
-            onViewDoc={handleViewDoc}
           />
         </div>
       </main>
@@ -201,13 +203,15 @@ function AppContent() {
         />
       )}
 
-      {previewDoc && (
-        <FileViewer
-          storeId={previewDoc.storeId}
-          doc={previewDoc}
-          onClose={() => setPreviewDoc(null)}
+      {!hasKeys && (
+        <ApiKeyModal 
+          onSubmit={(name, key) => {
+            addKey(name, key);
+            success('API Key configurada correctamente');
+          }} 
         />
       )}
+
     </div>
   );
 }

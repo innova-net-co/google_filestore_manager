@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
     let pageToken = '';
 
     do {
-      const url = `${API_BASE}/fileSearchStores?key=${process.env.GOOGLE_API_KEY}&pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`;
+      const url = `${API_BASE}/fileSearchStores?key=${req.googleApiKey}&pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'displayName is required' });
     }
 
-    const url = `${API_BASE}/fileSearchStores?key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE}/fileSearchStores?key=${req.googleApiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const url = `${API_BASE}/fileSearchStores/${id}?force=true&key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE}/fileSearchStores/${id}?force=true&key=${req.googleApiKey}`;
     const response = await fetch(url, { method: 'DELETE' });
 
     if (!response.ok) {
@@ -101,7 +101,7 @@ router.post('/:id/search', async (req, res) => {
     // Use generateContent with fileSearch tool (using snake_case as per requirement)
     // Endpoint: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
     const model = process.env.GOOGLE_MODEL || 'gemini-1.5-flash';
-    const url = `${API_BASE}/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE}/models/${model}:generateContent?key=${req.googleApiKey}`;
 
 
     const requestBody = {
@@ -120,11 +120,11 @@ router.post('/:id/search', async (req, res) => {
     console.log('Query:', query);
     console.log('Store ID:', id);
     console.log('Model:', model);
-    console.log('API Key:', process.env.GOOGLE_API_KEY);
+    console.log('API Key:', req.googleApiKey);
     console.log('Request Body:', requestBody);
 
     logToFile(`🔍 Starting search for store: ${id}`);
-    logToFile(`📡 URL: ${url.replace(process.env.GOOGLE_API_KEY, 'API_KEY_HIDDEN')}`);
+    logToFile(`📡 URL: ${url.replace(req.googleApiKey, 'API_KEY_HIDDEN')}`);
     logToFile(`📦 Request Body:`, requestBody);
 
     const response = await fetch(url, {

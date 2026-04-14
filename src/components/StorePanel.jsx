@@ -42,7 +42,6 @@ export default function StorePanel({
   documents,
   docsLoading,
   onDeleteDocument,
-  onViewDoc,
   onUploadFile,
   uploading,
 }) {
@@ -224,16 +223,6 @@ export default function StorePanel({
                 </div>
                 <StateBadge state={doc.state} />
                 <div className="doc-row__actions">
-                  <button
-                    className={`btn btn--icon ${doc.hasLocalPreview ? 'btn--ghost' : 'btn--disabled'}`}
-                    title={doc.hasLocalPreview ? "Ver documento" : "Vista previa no disponible"}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (doc.hasLocalPreview && onViewDoc) onViewDoc(storeId, docId);
-                    }}
-                  >
-                    👁️
-                  </button>
                   <button
                     className="btn btn--danger btn--icon"
                     title="Eliminar documento"

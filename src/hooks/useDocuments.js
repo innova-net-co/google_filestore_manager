@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { listDocuments, deleteDocument, uploadFile } from '../services/api';
 
 export function useDocuments() {
@@ -6,6 +6,7 @@ export function useDocuments() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const pollTimerRef = useRef(null);
 
   const fetchDocuments = useCallback(async (storeId) => {
     setLoading(true);
@@ -19,6 +20,36 @@ export function useDocuments() {
       setLoading(false);
     }
   }, []);
+
+  // Polling logic
+  useEffect(() => {
+    const hasPending = documents.some(doc => doc.state === 'STATE_PENDING');
+    
+    if (hasPending) {
+      // If we already have a timer, don't start another one
+      if (!pollTimerRef.current) {
+        pollTimerRef.current = setInterval(() => {
+          // Find the storeId from the first document (they all belong to the same store in this hook's context)
+          const storeId = documents[0].name.split('/')[1];
+          if (storeId) {
+            fetchDocuments(storeId);
+          }
+        }, 5000);
+      }
+    } else {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pollTimerRef.current) {
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+      }
+    };
+  }, [documents, fetchDocuments]);
 
   const removeDocument = useCallback(async (storeId, docId) => {
     setLoading(true);

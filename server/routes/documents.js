@@ -28,7 +28,7 @@ router.get('/:storeId/documents', async (req, res) => {
     let pageToken = '';
 
     do {
-      const url = `${API_BASE}/fileSearchStores/${storeId}/documents?key=${process.env.GOOGLE_API_KEY}&pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`;
+      const url = `${API_BASE}/fileSearchStores/${storeId}/documents?key=${req.googleApiKey}&pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -43,23 +43,7 @@ router.get('/:storeId/documents', async (req, res) => {
       pageToken = data.nextPageToken || '';
     } while (pageToken);
 
-    const storeDir = path.join(UPLOADS_DIR, storeId);
-    let localFiles = [];
-    if (fs.existsSync(storeDir)) {
-      localFiles = fs.readdirSync(storeDir);
-    }
-
-    const enhancedDocs = allDocuments.map(doc => {
-      const docId = doc.name.split('/').pop();
-      const localMatch = localFiles.find(f => f.startsWith(docId));
-      return {
-        ...doc,
-        hasLocalPreview: !!localMatch,
-        previewUrl: localMatch ? `/api/files/${storeId}/${localMatch}` : null
-      };
-    });
-
-    res.json({ documents: enhancedDocs });
+    res.json({ documents: allDocuments });
   } catch (err) {
     console.error('Error listing documents:', err);
     res.status(500).json({ error: err.message });
@@ -70,26 +54,12 @@ router.get('/:storeId/documents', async (req, res) => {
 router.delete('/:storeId/documents/:docId', async (req, res) => {
   try {
     const { storeId, docId } = req.params;
-    const url = `${API_BASE}/fileSearchStores/${storeId}/documents/${docId}?force=true&key=${process.env.GOOGLE_API_KEY}`;
+    const url = `${API_BASE}/fileSearchStores/${storeId}/documents/${docId}?force=true&key=${req.googleApiKey}`;
     const response = await fetch(url, { method: 'DELETE' });
 
     if (!response.ok) {
       const error = await response.json();
       return res.status(response.status).json({ error: error.error?.message || 'Failed to delete document' });
-    }
-
-    // Also delete local copy if exists
-    const storeDir = path.join(UPLOADS_DIR, storeId);
-    const localPath = path.join(storeDir, docId);
-    
-    // We try to find files that start with docId (in case they have extensions)
-    if (fs.existsSync(storeDir)) {
-      const files = fs.readdirSync(storeDir);
-      const fileToDelete = files.find(f => f.startsWith(docId));
-      if (fileToDelete) {
-        fs.unlinkSync(path.join(storeDir, fileToDelete));
-        logToFile(`Deleted local copy: ${fileToDelete}`);
-      }
     }
 
     res.json({ success: true });
@@ -124,9 +94,9 @@ router.post('/:storeId/upload', upload.single('file'), async (req, res) => {
     const endingBuffer = Buffer.from(ending, 'utf-8');
     const body = Buffer.concat([metadataBuffer, filePartBuffer, req.file.buffer, endingBuffer]);
 
-    const url = `${UPLOAD_BASE}/fileSearchStores/${storeId}:uploadToFileSearchStore?key=${process.env.GOOGLE_API_KEY}&uploadType=multipart`;
+    const url = `${UPLOAD_BASE}/fileSearchStores/${storeId}:uploadToFileSearchStore?key=${req.googleApiKey}&uploadType=multipart`;
     
-    logToFile(`📤 Uploading file to Google: ${url}`);
+    logToFile(`📤 Uploading file to Google: ${url.replace(req.googleApiKey, 'API_KEY_HIDDEN')}`);
     logToFile(`📏 Body size: ${body.length} bytes`);
 
     const response = await fetch(url, {
@@ -157,37 +127,6 @@ router.post('/:storeId/upload', upload.single('file'), async (req, res) => {
 
     const result = await response.json();
     logToFile('✅ File uploaded successfully:', result);
-
-    // PERSIST LOCAL COPY
-    try {
-      // Check for result.response.documentName (multipart/related result)
-      // or result.document.name (depending on API version/format)
-      const fullDocName = result.response?.documentName || result.document?.name;
-
-      if (fullDocName) {
-        const docId = fullDocName.split('/').pop();
-        const storeDir = path.join(UPLOADS_DIR, storeId);
-        
-        if (!fs.existsSync(storeDir)) {
-          fs.mkdirSync(storeDir, { recursive: true });
-        }
-
-        // Save with original extension to help with MIME detection later if needed
-        const ext = path.extname(req.file.originalname);
-        const localPath = path.join(storeDir, `${docId}${ext}`);
-        
-        fs.writeFileSync(localPath, req.file.buffer);
-        logToFile(`💾 Saved local copy: ${localPath} for document ${docId}`);
-        
-        // Add local path info to result for the frontend
-        result.hasLocalCopy = true;
-        result.localDocId = `${docId}${ext}`;
-      } else {
-        logToFile('⚠️ No fullDocName found in Gemini result:', result);
-      }
-    } catch (saveErr) {
-      logToFile('⚠️ Failed to save local copy (Gemini upload succeeded):', saveErr.message);
-    }
 
     res.status(201).json(result);
   } catch (err) {
