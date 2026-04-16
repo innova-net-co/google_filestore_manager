@@ -1,98 +1,60 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listDocuments, deleteDocument, uploadFile } from '../services/api';
 
-export function useDocuments() {
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-  const pollTimerRef = useRef(null);
+export function useDocuments(storeId) {
+  const queryClient = useQueryClient();
 
-  const fetchDocuments = useCallback(async (storeId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await listDocuments(storeId);
-      setDocuments(data.documents || []);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data: documentsData,
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchDocuments,
+  } = useQuery({
+    queryKey: ['documents', storeId],
+    queryFn: () => listDocuments(storeId),
+    enabled: !!storeId,
+    refetchInterval: (query) => {
+      const docs = query.state.data?.documents || [];
+      const hasPending = docs.some(doc => doc.state === 'STATE_PENDING');
+      return hasPending ? 5000 : false;
+    },
+  });
 
-  // Polling logic
-  useEffect(() => {
-    const hasPending = documents.some(doc => doc.state === 'STATE_PENDING');
-    
-    if (hasPending) {
-      // If we already have a timer, don't start another one
-      if (!pollTimerRef.current) {
-        pollTimerRef.current = setInterval(() => {
-          // Find the storeId from the first document (they all belong to the same store in this hook's context)
-          const storeId = documents[0].name.split('/')[1];
-          if (storeId) {
-            fetchDocuments(storeId);
-          }
-        }, 5000);
-      }
-    } else {
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-    }
+  const documents = documentsData?.documents || [];
+  const error = queryError?.message || null;
 
-    return () => {
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-        pollTimerRef.current = null;
-      }
-    };
-  }, [documents, fetchDocuments]);
+  const uploadMutation = useMutation({
+    mutationFn: ({ file }) => uploadFile(storeId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents', storeId] });
+    },
+  });
 
-  const removeDocument = useCallback(async (storeId, docId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteDocument(storeId, docId);
-      setDocuments((prev) => prev.filter((d) => {
-        const id = d.name?.split('/').pop();
-        return id !== docId;
-      }));
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const removeMutation = useMutation({
+    mutationFn: (docId) => deleteDocument(storeId, docId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents', storeId] });
+    },
+  });
 
-  const upload = useCallback(async (storeId, file) => {
-    setUploading(true);
-    setError(null);
-    try {
-      const result = await uploadFile(storeId, file);
-      // Re-fetch docs after upload to include the new one
-      await fetchDocuments(storeId);
-      return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setUploading(false);
-    }
-  }, [fetchDocuments]);
+  const upload = async (id, file) => {
+    // Note: id is expected to be storeId, but we use the one from the hook context
+    return uploadMutation.mutateAsync({ file });
+  };
 
-  const clearDocuments = useCallback(() => {
-    setDocuments([]);
-    setError(null);
-  }, []);
+  const removeDocument = async (sid, docId) => {
+    // Note: sid is expected to be storeId
+    return removeMutation.mutateAsync(docId);
+  };
+
+  const clearDocuments = () => {
+    queryClient.setQueryData(['documents', storeId], null);
+  };
 
   return {
     documents,
     loading,
-    uploading,
+    uploading: uploadMutation.isPending,
     error,
     fetchDocuments,
     removeDocument,

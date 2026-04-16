@@ -12,7 +12,6 @@ import ApiKeyModal from './components/ApiKeyModal';
 
 function AppContent() {
   const { stores, loading: storesLoading, fetchStores, addStore, removeStore } = useStores();
-  const { documents, loading: docsLoading, uploading, fetchDocuments, removeDocument, upload, clearDocuments } = useDocuments();
   const { keys, addKey, hasKeys, getActiveKey } = useApiKeys();
   const { success, error, info } = useToast();
 
@@ -20,6 +19,16 @@ function AppContent() {
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [selectedDocId, setSelectedDocId] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
+
+  const {
+    documents,
+    loading: docsLoading,
+    uploading,
+    fetchDocuments,
+    removeDocument,
+    upload,
+    clearDocuments,
+  } = useDocuments(selectedStoreId);
   
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
