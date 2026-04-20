@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-export default function ApiKeyModal({ onSubmit }) {
+export default function ApiKeyModal({ onSubmit, onCancel }) {
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
   const inputRef = useRef(null);
@@ -19,13 +19,17 @@ export default function ApiKeyModal({ onSubmit }) {
   return (
     <div className="modal-overlay">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal__title">Configuración de API Key</div>
+        <div className="modal__title">
+          {onCancel ? 'Nueva API Key' : 'Configuración de API Key'}
+        </div>
         <div className="modal__body">
-          <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#666' }}>
-            Bienvenido. Para comenzar, por favor ingresa una API Key de Google Generative Language. 
-            Tus claves se guardarán localmente en este navegador.
-          </p>
-          
+          {!onCancel && (
+            <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#666' }}>
+              Bienvenido. Para comenzar, por favor ingresa una API Key de Google Generative Language.
+              Tus claves se guardarán localmente en este navegador.
+            </p>
+          )}
+
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.85rem' }}>Nombre de la cuenta</label>
             <input
@@ -50,13 +54,22 @@ export default function ApiKeyModal({ onSubmit }) {
           </div>
         </div>
         <div className="modal__actions">
+          {onCancel && (
+            <button
+              className="btn btn--ghost"
+              onClick={onCancel}
+              style={{ flex: 1 }}
+            >
+              Cancelar
+            </button>
+          )}
           <button
             className="btn btn--primary"
             onClick={handleSubmit}
             disabled={!name.trim() || !key.trim()}
-            style={{ width: '100%' }}
+            style={{ flex: 1 }}
           >
-            Configurar y Empezar
+            {onCancel ? 'Guardar Clave' : 'Configurar y Empezar'}
           </button>
         </div>
       </div>

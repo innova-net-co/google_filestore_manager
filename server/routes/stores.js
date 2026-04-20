@@ -100,7 +100,7 @@ router.post('/:id/search', async (req, res) => {
 
     // Use generateContent with fileSearch tool (using snake_case as per requirement)
     // Endpoint: https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
-    const model = process.env.GOOGLE_MODEL || 'gemini-1.5-flash';
+    const model = process.env.GOOGLE_MODEL || 'gemma-4-26b-a4b-it';
     const url = `${API_BASE}/models/${model}:generateContent?key=${req.googleApiKey}`;
 
 

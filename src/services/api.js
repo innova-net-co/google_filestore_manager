@@ -1,20 +1,20 @@
 const API_BASE = '/api';
 
-const getHeaders = (headers = {}) => {
+const getHeaders = (headers = {}, apiKey = null) => {
   const saved = localStorage.getItem('google_filestore_api_keys');
   const keys = saved ? JSON.parse(saved) : [];
-  const activeKey = keys.find(k => k.active);
-  
+  const effectiveKey = apiKey || keys.find(k => k.active)?.key;
+
   const newHeaders = { ...headers };
-  if (activeKey) {
-    newHeaders['X-Goog-Api-Key'] = activeKey.key;
+  if (effectiveKey) {
+    newHeaders['X-Goog-Api-Key'] = effectiveKey;
   }
   return newHeaders;
 };
 
-export async function listStores() {
+export async function listStores(apiKey = null) {
   const res = await fetch(`${API_BASE}/stores`, {
-    headers: getHeaders()
+    headers: getHeaders({}, apiKey)
   });
   if (!res.ok) {
     const data = await res.json();
@@ -23,10 +23,10 @@ export async function listStores() {
   return res.json();
 }
 
-export async function createStore(displayName) {
+export async function createStore(displayName, apiKey = null) {
   const res = await fetch(`${API_BASE}/stores`, {
     method: 'POST',
-    headers: getHeaders({ 'Content-Type': 'application/json' }),
+    headers: getHeaders({ 'Content-Type': 'application/json' }, apiKey),
     body: JSON.stringify({ displayName }),
   });
   if (!res.ok) {
@@ -36,10 +36,10 @@ export async function createStore(displayName) {
   return res.json();
 }
 
-export async function deleteStore(storeId) {
+export async function deleteStore(storeId, apiKey = null) {
   const res = await fetch(`${API_BASE}/stores/${storeId}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    headers: getHeaders({}, apiKey)
   });
   if (!res.ok) {
     const data = await res.json();
@@ -48,9 +48,9 @@ export async function deleteStore(storeId) {
   return res.json();
 }
 
-export async function listDocuments(storeId) {
+export async function listDocuments(storeId, apiKey = null) {
   const res = await fetch(`${API_BASE}/stores/${storeId}/documents`, {
-    headers: getHeaders()
+    headers: getHeaders({}, apiKey)
   });
   if (!res.ok) {
     const data = await res.json();
@@ -59,10 +59,10 @@ export async function listDocuments(storeId) {
   return res.json();
 }
 
-export async function deleteDocument(storeId, docId) {
+export async function deleteDocument(storeId, docId, apiKey = null) {
   const res = await fetch(`${API_BASE}/stores/${storeId}/documents/${docId}`, {
     method: 'DELETE',
-    headers: getHeaders()
+    headers: getHeaders({}, apiKey)
   });
   if (!res.ok) {
     const data = await res.json();
@@ -71,13 +71,13 @@ export async function deleteDocument(storeId, docId) {
   return res.json();
 }
 
-export async function uploadFile(storeId, file) {
+export async function uploadFile(storeId, file, apiKey = null) {
   const formData = new FormData();
   formData.append('file', file);
 
   const res = await fetch(`${API_BASE}/stores/${storeId}/upload`, {
     method: 'POST',
-    headers: getHeaders(), // Note: No Content-Type here, fetch will set it for FormData
+    headers: getHeaders({}, apiKey), // Note: No Content-Type here, fetch will set it for FormData
     body: formData,
   });
   if (!res.ok) {

@@ -515,6 +515,14 @@ body {
   margin-top: 2px;
 }
 
+.doc-row__error {
+  font-size: var(--font-size-xs);
+  color: var(--warning);
+  margin-top: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 .doc-row__actions {
   flex-shrink: 0;
   opacity: 0;
@@ -917,4 +925,123 @@ body {
   opacity: 0.3;
   cursor: not-allowed;
   filter: grayscale(1);
+}
+
+/* --- Tree: Accordion Key/Store styles --- */
+
+/* Header del árbol con botón Crear Clave */
+.tree-header {
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-xs);
+}
+
+/* Botón pequeño */
+.btn--sm {
+  padding: 3px var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+
+/* Fila de clave (nivel raíz del acordeón) */
+.tree-node__row--key {
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: var(--font-weight-medium);
+}
+
+.tree-node__row--key:hover {
+  background: var(--bg-hover);
+}
+
+/* Dot indicador de clave activa */
+.key-active-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 5px var(--success);
+  flex-shrink: 0;
+}
+
+/* Etiqueta de nombre de clave */
+.key-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botones de acción inline en filas del árbol (upload, add store) */
+.tree-node__action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.tree-node__row:hover .tree-node__action-btn {
+  opacity: 1;
+}
+
+.tree-node__action-btn:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.tree-node__action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Botón de añadir store */
+.tree-node__action-btn--add {
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 0.5;
+}
+
+.tree-node__row--key:hover .tree-node__action-btn--add {
+  opacity: 1;
+}
+
+/* Botón de eliminar clave */
+.tree-node__action-btn--delete {
+  color: var(--danger);
+  font-size: 12px;
+  opacity: 0.3;
+}
+
+.tree-node__row--key:hover .tree-node__action-btn--delete {
+  opacity: 0.7;
+}
+
+.tree-node__action-btn--delete:hover:not(:disabled) {
+  color: var(--danger) !important;
+  background: #f8514922 !important;
+  opacity: 1;
+}
+
+/* Children de clave: sin padding extra heredado */
+.tree-node__children--key > div > .tree-node {
+  border-left: 2px solid var(--border-subtle);
+  margin-left: var(--space-lg);
+}
+
+/* Asegurar que botones de acción sean visibles en la fila seleccionada */
+.tree-node__row--selected .tree-node__action-btn {
+  opacity: 0.7;
 }

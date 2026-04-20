@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from './Toast';
 import { searchStore } from '../services/api';
 
@@ -23,16 +23,22 @@ function formatDate(dateStr) {
   });
 }
 
-function StateBadge({ state }) {
+function StateBadge({ state, error }) {
   const stateMap = {
     STATE_ACTIVE: { className: 'badge--active', icon: '●', label: 'Active' },
     STATE_PENDING: { className: 'badge--pending', icon: '◐', label: 'Pending' },
     STATE_FAILED: { className: 'badge--failed', icon: '●', label: 'Failed' },
   };
   const info = stateMap[state] || { className: '', icon: '○', label: state || 'Unknown' };
+  const errorMessage = error?.message || error?.code ? `${error.code || ''}: ${error.message || 'Error desconocido'}` : '';
   return (
-    <span className={`badge ${info.className}`}>
+    <span
+      className={`badge ${info.className}`}
+      title={errorMessage || undefined}
+      style={errorMessage ? { cursor: 'help' } : undefined}
+    >
       {info.icon} {info.label}
+      {errorMessage && ' ⚠'}
     </span>
   );
 }
@@ -45,10 +51,12 @@ export default function StorePanel({
   onUploadFile,
   uploading,
 }) {
-  const { success, error: toastError } = useToast();
+  const { success, error: toastError, info } = useToast();
+  const fileInputRef = useRef(null);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null); // { current, total, fileName }
 
   if (!store) {
     return (
@@ -64,6 +72,34 @@ export default function StorePanel({
 
   const storeId = store.name?.split('/').pop() || '';
   const displayName = store.displayName || storeId;
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    e.target.value = '';
+
+    setUploadProgress({ current: 0, total: files.length, fileName: '' });
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setUploadProgress({ current: i + 1, total: files.length, fileName: file.name });
+      try {
+        info(`Subiendo archivo ${i + 1}/${files.length}: "${file.name}"...`);
+        await onUploadFile(storeId, file);
+        success(`Archivo "${file.name}" subido correctamente (${i + 1}/${files.length})`);
+      } catch (err) {
+        toastError(`Error al subir "${file.name}": ${err.message}`);
+      }
+    }
+
+    setUploadProgress(null);
+  };
+
+  const isUploading = uploading || uploadProgress !== null;
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -181,12 +217,31 @@ export default function StorePanel({
 
       <div className="store-panel__docs">
         <div className="store-panel__docs-header">
-          Documentos {documents?.length ? `(${documents.length})` : ''}
-          {uploading && (
-            <span style={{ marginLeft: '8px' }}>
-              <span className="spinner spinner--sm"></span> Subiendo...
-            </span>
-          )}
+          <span>Documentos {documents?.length ? `(${documents.length})` : ''}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isUploading && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+                <span className="spinner spinner--sm"></span>
+                {uploadProgress
+                  ? `Subiendo ${uploadProgress.current}/${uploadProgress.total}: ${uploadProgress.fileName}`
+                  : 'Subiendo...'}
+              </span>
+            )}
+            <button
+              className="btn btn--primary btn--sm"
+              onClick={handleUploadClick}
+              disabled={isUploading}
+            >
+              📎 Subir Archivos
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+          </div>
         </div>
 
         {docsLoading ? (
@@ -202,14 +257,16 @@ export default function StorePanel({
             <button
               className="btn btn--primary"
               style={{ marginTop: 'var(--space-md)' }}
-              onClick={() => onUploadFile?.(storeId)}
+              onClick={handleUploadClick}
+              disabled={isUploading}
             >
-              📎 Subir Archivo
+              📎 Subir Archivos
             </button>
           </div>
         ) : (
           documents.map((doc) => {
             const docId = doc.name?.split('/').pop() || '';
+            const errorMsg = doc.error?.message || (doc.state === 'STATE_FAILED' ? 'El procesamiento del documento falló. Verifique los créditos de su API Key en AI Studio.' : null);
             return (
               <div key={docId} className="doc-row">
                 <span className="doc-row__icon">📄</span>
@@ -220,8 +277,13 @@ export default function StorePanel({
                     <span>{formatBytes(doc.sizeBytes)}</span>
                     {doc.createTime && <span>{formatDate(doc.createTime)}</span>}
                   </div>
+                  {errorMsg && (
+                    <div className="doc-row__error">
+                      ⚠️ {errorMsg}
+                    </div>
+                  )}
                 </div>
-                <StateBadge state={doc.state} />
+                <StateBadge state={doc.state} error={doc.error} />
                 <div className="doc-row__actions">
                   <button
                     className="btn btn--danger btn--icon"

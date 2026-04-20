@@ -2,60 +2,77 @@ import { useState, useCallback } from 'react';
 import { listStores, createStore, deleteStore } from '../services/api';
 
 export function useStores() {
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // Mapa de stores por keyId: { [keyId]: stores[] }
+  const [storesByKey, setStoresByKey] = useState({});
+  // Mapa de loading por keyId: { [keyId]: boolean }
+  const [loadingByKey, setLoadingByKey] = useState({});
   const [error, setError] = useState(null);
 
-  const fetchStores = useCallback(async () => {
-    setLoading(true);
+  /**
+   * Carga los stores de una clave API específica.
+   * @param {string} keyId - ID interno de la clave
+   * @param {string} apiKeyValue - Valor de la API key de Google
+   */
+  const fetchStoresByKey = useCallback(async (keyId, apiKeyValue) => {
+    setLoadingByKey(prev => ({ ...prev, [keyId]: true }));
     setError(null);
     try {
-      const data = await listStores();
-      setStores(data.stores || []);
+      const data = await listStores(apiKeyValue);
+      setStoresByKey(prev => ({ ...prev, [keyId]: data.stores || [] }));
     } catch (err) {
       setError(err.message);
+      setStoresByKey(prev => ({ ...prev, [keyId]: [] }));
     } finally {
-      setLoading(false);
+      setLoadingByKey(prev => ({ ...prev, [keyId]: false }));
     }
   }, []);
 
-  const addStore = useCallback(async (displayName) => {
-    setLoading(true);
+  /**
+   * Crea un store bajo una clave API específica.
+   * @param {string} displayName - Nombre del store
+   * @param {string} keyId - ID interno de la clave
+   * @param {string} apiKeyValue - Valor de la API key de Google
+   */
+  const addStore = useCallback(async (displayName, keyId, apiKeyValue) => {
     setError(null);
     try {
-      const newStore = await createStore(displayName);
-      setStores((prev) => [...prev, newStore]);
+      const newStore = await createStore(displayName, apiKeyValue);
+      setStoresByKey(prev => ({
+        ...prev,
+        [keyId]: [...(prev[keyId] || []), newStore],
+      }));
       return newStore;
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
-  const removeStore = useCallback(async (storeId) => {
-    setLoading(true);
+  /**
+   * Elimina un store de una clave API específica.
+   * @param {string} storeId - ID del store a eliminar
+   * @param {string} keyId - ID interno de la clave propietaria
+   * @param {string} apiKeyValue - Valor de la API key de Google
+   */
+  const removeStore = useCallback(async (storeId, keyId, apiKeyValue) => {
     setError(null);
     try {
-      await deleteStore(storeId);
-      setStores((prev) => prev.filter((s) => {
-        const id = s.name?.split('/').pop();
-        return id !== storeId;
+      await deleteStore(storeId, apiKeyValue);
+      setStoresByKey(prev => ({
+        ...prev,
+        [keyId]: (prev[keyId] || []).filter(s => s.name?.split('/').pop() !== storeId),
       }));
     } catch (err) {
       setError(err.message);
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   return {
-    stores,
-    loading,
+    storesByKey,
+    loadingByKey,
     error,
-    fetchStores,
+    fetchStoresByKey,
     addStore,
     removeStore,
   };

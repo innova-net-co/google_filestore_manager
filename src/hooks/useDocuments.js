@@ -1,7 +1,8 @@
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listDocuments, deleteDocument, uploadFile } from '../services/api';
 
-export function useDocuments(storeId) {
+export function useDocuments(storeId, apiKeyValue = null) {
   const queryClient = useQueryClient();
 
   const {
@@ -10,8 +11,8 @@ export function useDocuments(storeId) {
     error: queryError,
     refetch: fetchDocuments,
   } = useQuery({
-    queryKey: ['documents', storeId],
-    queryFn: () => listDocuments(storeId),
+    queryKey: ['documents', storeId, apiKeyValue],
+    queryFn: () => listDocuments(storeId, apiKeyValue),
     enabled: !!storeId,
     refetchInterval: (query) => {
       const docs = query.state.data?.documents || [];
@@ -24,32 +25,30 @@ export function useDocuments(storeId) {
   const error = queryError?.message || null;
 
   const uploadMutation = useMutation({
-    mutationFn: ({ file }) => uploadFile(storeId, file),
+    mutationFn: ({ file }) => uploadFile(storeId, file, apiKeyValue),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', storeId] });
+      queryClient.invalidateQueries({ queryKey: ['documents', storeId, apiKeyValue] });
     },
   });
 
   const removeMutation = useMutation({
-    mutationFn: (docId) => deleteDocument(storeId, docId),
+    mutationFn: (docId) => deleteDocument(storeId, docId, apiKeyValue),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', storeId] });
+      queryClient.invalidateQueries({ queryKey: ['documents', storeId, apiKeyValue] });
     },
   });
 
   const upload = async (id, file) => {
-    // Note: id is expected to be storeId, but we use the one from the hook context
     return uploadMutation.mutateAsync({ file });
   };
 
   const removeDocument = async (sid, docId) => {
-    // Note: sid is expected to be storeId
     return removeMutation.mutateAsync(docId);
   };
 
-  const clearDocuments = () => {
-    queryClient.setQueryData(['documents', storeId], null);
-  };
+  const clearDocuments = useCallback(() => {
+    queryClient.setQueryData(['documents', storeId, apiKeyValue], null);
+  }, [queryClient, storeId, apiKeyValue]);
 
   return {
     documents,

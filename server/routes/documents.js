@@ -43,6 +43,14 @@ router.get('/:storeId/documents', async (req, res) => {
       pageToken = data.nextPageToken || '';
     } while (pageToken);
 
+    // Log failed documents for debugging
+    const failedDocs = allDocuments.filter(doc => doc.state === 'STATE_FAILED');
+    if (failedDocs.length > 0) {
+      logToFile(`⚠️ ${failedDocs.length} documento(s) con estado FAILED en store ${storeId}:`,
+        failedDocs.map(d => ({ name: d.displayName, state: d.state, error: d.error || 'Sin detalle de error' }))
+      );
+    }
+
     res.json({ documents: allDocuments });
   } catch (err) {
     console.error('Error listing documents:', err);

@@ -59,40 +59,72 @@ export default function ApiKeyManager() {
 
       <div className="api-key-list" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {keys.map((k) => (
-          <div 
-            key={k.id} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+          <div
+            key={k.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '6px 10px',
-              borderRadius: '4px',
-              background: k.active ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent',
-              border: k.active ? '1px solid var(--primary)' : '1px solid var(--border)',
-              cursor: 'pointer'
+              padding: '8px 10px',
+              borderRadius: '6px',
+              background: k.active ? 'var(--accent-subtle)' : 'var(--bg-tertiary)',
+              border: k.active ? '1px solid var(--accent)' : '1px solid var(--border)',
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+              boxShadow: k.active ? '0 0 0 1px var(--accent)' : 'none',
             }}
             onClick={() => setActiveKey(k.id)}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-              <span style={{ 
-                width: '8px', 
-                height: '8px', 
-                borderRadius: '50%', 
-                background: k.active ? 'var(--primary)' : '#ccc',
-                flexShrink: 0
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: k.active ? 'var(--success)' : 'var(--text-muted)',
+                flexShrink: 0,
+                boxShadow: k.active ? '0 0 6px var(--success)' : 'none',
               }}></span>
-              <span style={{ fontSize: '0.85rem', fontWeight: k.active ? '600' : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{
+                fontSize: '0.85rem',
+                fontWeight: k.active ? '600' : '400',
+                color: k.active ? 'var(--accent)' : 'var(--text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+                minWidth: 0,
+              }}>
                 {k.name}
               </span>
-              <span style={{ fontSize: '0.7rem', color: '#888', fontFamily: 'monospace' }}>
-                {k.key.slice(0, 4)}...{k.key.slice(-4)}
+              {k.active && (
+                <span style={{
+                  fontSize: '0.65rem',
+                  background: 'var(--success)',
+                  color: '#fff',
+                  padding: '1px 6px',
+                  borderRadius: '10px',
+                  fontWeight: '600',
+                  flexShrink: 0,
+                  letterSpacing: '0.02em',
+                }}>
+                  ACTIVA
+                </span>
+              )}
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace', flexShrink: 0 }}>
+                {k.key.slice(0, 4)}···{k.key.slice(-4)}
               </span>
             </div>
-            <button 
-              className="btn--icon" 
+            <button
+              className="btn--icon"
               onClick={(e) => { e.stopPropagation(); removeKey(k.id); }}
               title="Eliminar"
-              style={{ padding: '2px', opacity: 0.6 }}
+              style={{
+                padding: '2px',
+                marginLeft: '6px',
+                color: 'var(--danger)',
+                opacity: 0.7,
+                flexShrink: 0,
+              }}
             >
               ✕
             </button>

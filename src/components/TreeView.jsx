@@ -1,73 +1,51 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from './Toast';
 
 function getStoreId(store) {
   return store.name?.split('/').pop() || '';
 }
 
-function getDocId(doc) {
-  return doc.name?.split('/').pop() || '';
-}
-
-function formatBytes(bytes) {
-  if (!bytes) return '0 B';
-  const num = parseInt(bytes, 10);
-  if (num === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(num) / Math.log(k));
-  return parseFloat((num / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function StateBadge({ state }) {
-  const stateMap = {
-    STATE_ACTIVE: { className: 'badge--active', icon: '●', label: 'Active' },
-    STATE_PENDING: { className: 'badge--pending', icon: '◐', label: 'Pending' },
-    STATE_FAILED: { className: 'badge--failed', icon: '●', label: 'Failed' },
-  };
-  const info = stateMap[state] || { className: '', icon: '○', label: state || 'Unknown' };
-  return (
-    <span className={`badge ${info.className}`}>
-      {info.icon} {info.label}
-    </span>
-  );
-}
-
 function StoreNode({
   store,
   isSelected,
-  isExpanded,
-  documents,
-  docsLoading,
-  selectedDocId,
+  uploading,
   onSelectStore,
-  onSelectDoc,
-  onToggleExpand,
+  onUploadFile,
 }) {
   const { success } = useToast();
+  const fileInputRef = useRef(null);
   const storeId = getStoreId(store);
   const activeCount = store.activeDocumentsCount || '0';
   const displayName = store.displayName || storeId;
 
+  const handleUploadClick = (e) => {
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      await onUploadFile?.(storeId, file);
+    }
+  };
+
   return (
-    <div className="tree-node">
+    <div className="tree-node tree-node--store">
       <div
         className={`tree-node__row ${isSelected ? 'tree-node__row--selected' : ''}`}
-        onClick={() => {
-          onSelectStore(storeId);
-          onToggleExpand(storeId);
-        }}
+        onClick={() => onSelectStore(storeId)}
       >
-        <span className={`tree-node__chevron ${isExpanded ? 'tree-node__chevron--expanded' : ''}`}>
-          ▶
-        </span>
         <span className="tree-node__icon">📁</span>
         <div className="tree-node__info">
           <span className="tree-node__label" title={displayName}>{displayName}</span>
           <span className="tree-node__sublabel">
             {store.name}
-            <button 
-              className="copy-btn" 
+            <button
+              className="copy-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(store.name);
@@ -83,40 +61,125 @@ function StoreNode({
           </span>
         </div>
         <span className="tree-node__badge tree-node__badge--count">{activeCount}</span>
+        <button
+          className="tree-node__action-btn"
+          onClick={handleUploadClick}
+          disabled={uploading}
+          title="Subir archivo"
+        >
+          {uploading
+            ? <span className="spinner spinner--sm" style={{ width: '12px', height: '12px' }} />
+            : '📎'}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+function KeyNode({
+  apiKey,
+  isExpanded,
+  stores,
+  storesLoading,
+  selectedStoreId,
+  uploadingByStore,
+  onToggle,
+  onCreateStore,
+  onDeleteKey,
+  onSelectStore,
+  onUploadFile,
+}) {
+  return (
+    <div className="tree-node tree-node--key">
+      <div
+        className="tree-node__row tree-node__row--key"
+        onClick={() => onToggle(apiKey.id)}
+      >
+        <span className={`tree-node__chevron ${isExpanded ? 'tree-node__chevron--expanded' : ''}`}>
+          ▶
+        </span>
+        {apiKey.active && (
+          <span className="key-active-dot" title="Clave activa" />
+        )}
+        <span className="tree-node__icon" style={{ fontSize: '0.85em' }}>🔑</span>
+        <div className="tree-node__info">
+          <span className="tree-node__label key-label" title={apiKey.name}>
+            {apiKey.name}
+          </span>
+          {apiKey.active && (
+            <span style={{
+              fontSize: '0.6rem',
+              background: 'var(--success)',
+              color: '#fff',
+              padding: '1px 5px',
+              borderRadius: '10px',
+              fontWeight: '600',
+              letterSpacing: '0.02em',
+            }}>
+              ACTIVA
+            </span>
+          )}
+        </div>
+        {storesLoading && (
+          <span className="spinner spinner--sm" style={{ marginLeft: '4px', marginRight: '4px' }} />
+        )}
+        <button
+          className="tree-node__action-btn tree-node__action-btn--add"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateStore(apiKey.id, apiKey.key);
+          }}
+          title="Adicionar Store"
+        >
+          ＋
+        </button>
+        <button
+          className="tree-node__action-btn tree-node__action-btn--delete"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteKey(apiKey.id);
+          }}
+          title="Eliminar Clave"
+        >
+          ✕
+        </button>
       </div>
       {isExpanded && (
-        <div className="tree-node__children">
-          {docsLoading ? (
+        <div className="tree-node__children tree-node__children--key">
+          {storesLoading ? (
             <div className="tree-node__row" style={{ paddingLeft: 'calc(var(--space-lg) + 24px)' }}>
               <span className="spinner spinner--sm"></span>
               <span className="tree-node__label" style={{ color: 'var(--text-secondary)' }}>
-                Cargando documentos...
+                Cargando stores...
               </span>
             </div>
-          ) : documents && documents.length > 0 ? (
-            documents.map((doc) => {
-              const docId = getDocId(doc);
+          ) : stores && stores.length > 0 ? (
+            stores.map((store) => {
+              const storeId = store.name?.split('/').pop() || '';
+              const isSelected = selectedStoreId === storeId;
               return (
-                <div
-                  key={docId}
-                  className={`tree-node__row ${selectedDocId === docId ? 'tree-node__row--selected' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectDoc(storeId, docId);
-                  }}
-                >
-                  <span className="tree-node__icon">📄</span>
-                  <span className="tree-node__label" title={doc.displayName || docId}>
-                    {doc.displayName || docId}
-                  </span>
-                  <StateBadge state={doc.state} />
+                <div key={storeId} style={{ paddingLeft: 'var(--space-md)' }}>
+                  <StoreNode
+                    store={store}
+                    isSelected={isSelected}
+                    uploading={uploadingByStore?.[storeId] || false}
+                    onSelectStore={(sid) => onSelectStore(sid, apiKey.id, apiKey.key)}
+                    onUploadFile={(sid, file) => onUploadFile(sid, file, apiKey.key)}
+                  />
                 </div>
               );
             })
           ) : (
             <div className="tree-node__row" style={{ paddingLeft: 'calc(var(--space-lg) + 24px)' }}>
               <span className="tree-node__label" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                Sin documentos
+                Sin stores
               </span>
             </div>
           )}
@@ -127,73 +190,77 @@ function StoreNode({
 }
 
 export default function TreeView({
-  stores,
-  storesLoading,
+  keys,
+  storesByKey,
+  loadingByKey,
+  uploadingByStore,
   selectedStoreId,
-  selectedDocId,
-  documents,
-  docsLoading,
+  onLoadStores,
   onSelectStore,
-  onSelectDoc,
+  onCreateKey,
+  onDeleteKey,
+  onCreateStore,
+  onUploadFile,
 }) {
-  const [expandedStores, setExpandedStores] = useState(new Set());
+  const [expandedKeyId, setExpandedKeyId] = useState(null);
 
-  const handleToggleExpand = (storeId) => {
-    setExpandedStores((prev) => {
-      const next = new Set(prev);
-      if (next.has(storeId)) {
-        next.delete(storeId);
-      } else {
-        next.add(storeId);
+  const handleKeyToggle = (keyId) => {
+    if (expandedKeyId === keyId) {
+      // Cerrar la clave abierta
+      setExpandedKeyId(null);
+    } else {
+      // Abrir esta clave (cierra la anterior automáticamente)
+      setExpandedKeyId(keyId);
+      // Siempre recargar stores al expandir
+      const key = keys?.find(k => k.id === keyId);
+      if (key) {
+        onLoadStores(keyId, key.key);
       }
-      return next;
-    });
+    }
   };
 
-  if (storesLoading) {
+  if (!keys || keys.length === 0) {
     return (
       <div className="empty-state" style={{ padding: 'var(--space-xl)' }}>
-        <span className="spinner spinner--lg"></span>
-        <p style={{ marginTop: 'var(--space-md)', color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-          Cargando stores...
-        </p>
-      </div>
-    );
-  }
-
-  if (!stores || stores.length === 0) {
-    return (
-      <div className="empty-state" style={{ padding: 'var(--space-xl)' }}>
-        <div className="empty-state__icon">📂</div>
-        <div className="empty-state__title">Sin stores</div>
+        <div className="empty-state__icon">🔑</div>
+        <div className="empty-state__title">Sin claves configuradas</div>
         <div className="empty-state__text">
-          No se encontraron File Search Stores. Crea uno nuevo para comenzar.
+          Crea una clave API para comenzar.
         </div>
+        <button
+          className="btn btn--primary"
+          style={{ marginTop: 'var(--space-md)' }}
+          onClick={onCreateKey}
+        >
+          ➕ Crear Clave
+        </button>
       </div>
     );
   }
 
   return (
     <div>
-      {stores.map((store) => {
-        const storeId = getStoreId(store);
-        const isExpanded = expandedStores.has(storeId);
-        const isSelected = selectedStoreId === storeId;
-        return (
-          <StoreNode
-            key={storeId}
-            store={store}
-            isSelected={isSelected}
-            isExpanded={isExpanded}
-            documents={isSelected ? documents : []}
-            docsLoading={isSelected && docsLoading}
-            selectedDocId={selectedDocId}
-            onSelectStore={onSelectStore}
-            onSelectDoc={onSelectDoc}
-            onToggleExpand={handleToggleExpand}
-          />
-        );
-      })}
+      <div className="tree-header">
+        <button className="btn btn--primary btn--sm" onClick={onCreateKey}>
+          ➕ Crear Clave
+        </button>
+      </div>
+      {keys.map((apiKey) => (
+        <KeyNode
+          key={apiKey.id}
+          apiKey={apiKey}
+          isExpanded={expandedKeyId === apiKey.id}
+          stores={storesByKey[apiKey.id]}
+          storesLoading={loadingByKey[apiKey.id] || false}
+          selectedStoreId={selectedStoreId}
+          uploadingByStore={uploadingByStore}
+          onToggle={handleKeyToggle}
+          onCreateStore={onCreateStore}
+          onDeleteKey={onDeleteKey}
+          onSelectStore={onSelectStore}
+          onUploadFile={onUploadFile}
+        />
+      ))}
     </div>
   );
 }
