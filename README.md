@@ -38,7 +38,7 @@ La aplicación está construida utilizando una arquitectura moderna que integra 
 
 1.  **Clonar el repositorio y entrar al directorio:**
     ```bash
-    git clone <URL_DEL_REPOSITORIO>
+    git clone https://github.com/innova-net-co/google_filestore_manager.git
     cd google_filestore_manager
     ```
 
