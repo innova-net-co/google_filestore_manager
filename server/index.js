@@ -90,7 +90,7 @@ const isDirectRun = process.argv[1] && (
   process.argv[1].endsWith('server/index.js')
 );
 
-if (isDirectRun || process.env.NODE_ENV === 'production') {
+if (isDirectRun) {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`🔑 Dynamic API Key Authentication enabled (Header: X-Goog-Api-Key)`);
